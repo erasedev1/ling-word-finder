@@ -99,4 +99,5 @@ for (const line of lines) {
 rows.sort((a, b) => (a[0] < b[0] ? -1 : 1));
 fs.mkdirSync('site/data', { recursive: true });
 fs.writeFileSync('site/data/words.json', JSON.stringify({ fields: ['w', 'pos', 'flags', 'form', 'base', 'pronoun'], built: new Date().toISOString(), rows }));
+fs.writeFileSync('site/data/words.js', 'window.WORDS=' + fs.readFileSync('site/data/words.json', 'utf8') + ';');
 console.log('rows', rows.length, 'not found', skipped);

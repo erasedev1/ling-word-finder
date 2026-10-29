@@ -219,12 +219,16 @@ function card(r) {
 async function load() {
   buildStatic();
   try {
-    const res = await fetch('data/words.json'); if (!res.ok) throw new Error(res.status);
-    const j = await res.json();
+    let j;
+    try { const res = await fetch('data/words.json'); if (!res.ok) throw new Error(res.status); j = await res.json(); }
+    catch (e) {  // opened from file:// (fetch blocked): load the script copy instead
+      await new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'data/words.js'; s.onload = ok; s.onerror = no; document.head.append(s); });
+      j = window.WORDS;
+    }
     S.rows = j.rows.map(([w, pos, flags, form, base, pn]) => ({ w, pos, flags, form, base: base || '', pn: pn ? pn.split(',') : [] }));
     run();
   } catch (e) {
-    $('summary').textContent = 'Could not load data/words.json. Build it first: node scraper/build.mjs (see README).';
+    $('summary').textContent = 'Could not load site/data/words.json or words.js. Run git pull, or rebuild with node scraper/build.mjs.';
   }
 }
 load();

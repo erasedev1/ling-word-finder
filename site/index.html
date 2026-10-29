@@ -10,12 +10,16 @@
 <header>
   <h1>LinguiSHTIK Word Finder</h1>
   <p>Find legal 4&ndash;10 letter words that satisfy a shake&rsquo;s demands. Word list scraped from Webster&rsquo;s Third International Unabridged (the official AGLOA dictionary).</p>
+  <nav id="modes">
+    <button type="button" class="mode on" data-mode="find">Word Finder</button>
+    <button type="button" class="mode" data-mode="play">&#127922; Play mode</button>
+  </nav>
 </header>
 
 <main>
 <aside id="filters">
 
-  <section>
+  <section class="finder-only">
     <h2>Order of Play</h2>
     <label>Division
       <select id="division">
@@ -34,7 +38,7 @@
     <p id="functionNote" class="note"></p>
   </section>
 
-  <section>
+  <section class="finder-only">
     <h2>General demands</h2>
     <div class="row2">
       <label>Number of letters
@@ -57,7 +61,7 @@
     </label>
   </section>
 
-  <section>
+  <section class="finder-only">
     <h2>Cubes on the mat</h2>
     <label>Letters (cubes played)
       <input id="matLetters" placeholder="e.g. e s t   (use * for a wild cube)">
@@ -95,6 +99,41 @@
 </aside>
 
 <section id="results">
+  <div id="game" hidden>
+    <div id="gSetup">
+      <h2>Roll &amp; race</h2>
+      <p class="note">Roll the LinguiSHTIK cubes, get a part of speech (and sometimes extra demands), then find as many matching words as you can before time runs out. Afterwards you&rsquo;ll see every word you missed.</p>
+      <div class="row2">
+        <label>Division <select id="gDiv"><option value="el">Elementary</option><option value="mid">Middle</option><option value="jr" selected>Junior</option><option value="sr">Senior</option></select></label>
+        <label>Part of speech <select id="gType"></select></label>
+      </div>
+      <div class="row2">
+        <label>Cubes <select id="gCubes"></select></label>
+        <label>Time <select id="gTime"><option value="60">1:00</option><option value="120" selected>2:00</option><option value="180">3:00</option><option value="300">5:00</option></select></label>
+      </div>
+      <label class="check"><input type="checkbox" id="gExtra" checked> Sometimes add an extra demand (letters, must contain&hellip;)</label>
+      <label class="check"><input type="checkbox" id="gForm" checked> Sometimes add a word-form demand (plural, past&hellip;)</label>
+      <button id="gRoll" type="button" class="primary">&#127922; Roll the cubes</button>
+    </div>
+    <div id="gPlay" hidden>
+      <div id="gTop"><div id="timer">2:00</div><div id="gCount"></div></div>
+      <div id="dice"></div>
+      <div id="demands"></div>
+      <form id="gEntry" autocomplete="off"><input id="gInput" placeholder="Type a word and press Enter" autocapitalize="off" autocorrect="off" spellcheck="false"><button type="submit" class="primary">Add</button></form>
+      <div id="gMsg" aria-live="polite"></div>
+      <div id="gFound"></div>
+      <button id="gEnd" type="button">End round</button>
+    </div>
+    <div id="gResult" hidden>
+      <h2 id="gScore"></h2>
+      <div id="gDemandRecap"></div>
+      <h3>You found</h3><div id="gHit" class="wl"></div>
+      <h3>You missed <span id="gMissN"></span></h3><div id="gMiss" class="wl"></div>
+      <button id="gMore" type="button" hidden>Show more</button>
+      <button id="gAgain" type="button" class="primary">&#127922; Roll again</button>
+    </div>
+  </div>
+  <div id="finder">
   <div id="summary">Loading word list&hellip;</div>
   <div id="list"></div>
   <button id="more" hidden type="button">Show more</button>
@@ -103,8 +142,10 @@
     <div id="refBody"></div>
   </details>
   <p class="note">Parts of speech come from Merriam-Webster&rsquo;s entry list. Word forms (plural, past, &hellip;) and regular/irregular are inferred from the dictionary&rsquo;s inflection data, so a judge&rsquo;s dictionary check is still final. Labels such as &ldquo;obsolete&rdquo; may apply to only one sense of a word.</p>
+  </div>
 </section>
 </main>
 <script src="app.js"></script>
+<script src="game.js"></script>
 </body>
 </html>

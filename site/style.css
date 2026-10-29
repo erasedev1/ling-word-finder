@@ -41,3 +41,31 @@ button{cursor:pointer}
 #refBody h3{margin:8px 0 2px;font-size:13px}
 #refBody p{margin:0 0 4px;color:var(--mute)}
 #more[hidden]{display:none}
+#modes{display:flex;gap:8px;margin-top:12px}
+.mode{border-radius:999px;padding:6px 16px;background:var(--chip)}
+.mode.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+body.play .finder-only,body.play #finder{display:none}
+body:not(.play) #game{display:none}
+.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;padding:8px 18px}
+#gRoll{margin-top:10px}
+#gTop{display:flex;justify-content:space-between;align-items:baseline}
+#timer{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums}
+#timer.low{color:#c0462f}
+#gCount{color:var(--mute);font-weight:600}
+#dice{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.die{width:54px;height:54px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;text-transform:uppercase;background:#fffdf5;color:#1d2330;border:2px solid #cfc6a8;border-radius:10px;box-shadow:0 2px 0 #cfc6a8}
+.die.rolling{animation:wob .18s infinite alternate;opacity:.85}
+@keyframes wob{from{transform:rotate(-9deg) translateY(-3px)}to{transform:rotate(9deg) translateY(2px)}}
+#demands,#gDemandRecap{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.dem{background:var(--chip);border:1px solid var(--accent);border-radius:8px;padding:4px 10px;font-size:14px}
+.dem b{color:var(--accent)}
+#gEntry{display:flex;gap:8px}
+#gEntry input{flex:1;font-size:18px;padding:10px}
+#gMsg{min-height:22px;margin:6px 0;font-size:14px;color:var(--mute)}
+#gMsg.ok{color:#2a8a4a}#gMsg.bad{color:#c0462f}
+#gFound,.wl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.hit{background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:3px 9px;font-weight:600}
+.wl .w.got{border-color:var(--accent)}
+#gResult h3{margin:14px 0 6px;font-size:14px}
+#gMore{display:block;margin:0 auto 12px}
+#gMore[hidden],#game [hidden]{display:none}

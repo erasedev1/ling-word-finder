@@ -137,8 +137,7 @@ function buildable(counts, len, L, R, mode, useAll) {
   return remUnco + remOther <= k;
 }
 
-function run() {
-  if (!S.rows.length) return;
+function readParams() {
   const get = id => $(id);
   const lenMin = +get('lenMin').value, lenMax = +get('lenMax').value;
   const have = get('mustHave').value.trim().toLowerCase(), not = get('mustNot').value.trim().toLowerCase();
@@ -152,9 +151,13 @@ function run() {
   const pat = get('pattern').value;
   const typeBit = S.type ? TYPES.find(t => t[0] === S.type)[1] : 0;
   const groups = (GROUPS[S.type] || []).map(g => ({ g, sel: g.opts.filter(o => S.forms[g.id + ':' + o[0]]) })).filter(x => x.sel.length);
+  return { lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups };
+}
+function filterRows(P, rows = S.rows) {
+  const { lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups } = P;
   const dblv = /(aa|ee|ii|oo|uu)/, dblc = /([bcdfghjklmnpqrstvwxyz])\1/;
   const out = [];
-  for (const r of S.rows) {
+  for (const r of rows) {
     const w = r.w, n = w.length;
     if (n < lenMin || n > lenMax) continue;
     if (headOnly && r.base) continue;
@@ -187,7 +190,12 @@ function run() {
     }
     out.push(r);
   }
-  const sort = get('sort').value;
+  return out;
+}
+function run() {
+  if (!S.rows.length) return;
+  const out = filterRows(readParams());
+  const sort = $('sort').value;
   if (sort === 'len') out.sort((a, b) => b.w.length - a.w.length || (a.w < b.w ? -1 : 1));
   else if (sort === 'rand') for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
   S.matches = out; S.shown = 0; $('list').innerHTML = '';

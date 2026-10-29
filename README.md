@@ -28,6 +28,13 @@ node scraper/build.mjs      # -> site/data/words.json
 cd site && python3 -m http.server 8765    # then open http://localhost:8765
 ```
 
+## Play mode
+The **Play mode** button rolls 6–12 letter cubes, picks a part of speech (optionally plus a
+word-form or general demand such as number of letters / must contain / double vowel) and starts a
+timer (default 2:00). Type words as you find them; when time is up you see your score and every
+valid word you missed. It reuses the Word Finder's filtering and respects the *Dictionary rules*
+checkboxes.
+
 ## Caveats
 - Parts of speech/transitivity come from Merriam-Webster's entry list; plural/past/-ing/comparative
   forms and regular/irregular are inferred from the entry's inflection list. A judge's check

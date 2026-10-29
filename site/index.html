@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LinguiSHTIK Word Finder</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>LinguiSHTIK Word Finder</h1>
+  <p>Find legal 4&ndash;10 letter words that satisfy a shake&rsquo;s demands. Word list scraped from Webster&rsquo;s Third International Unabridged (the official AGLOA dictionary).</p>
+</header>
+
+<main>
+<aside id="filters">
+
+  <section>
+    <h2>Order of Play</h2>
+    <label>Division
+      <select id="division">
+        <option value="el">Elementary (4&ndash;6)</option>
+        <option value="mid">Middle (7&ndash;8)</option>
+        <option value="jr" selected>Junior (9&ndash;12 &ndash; Jr)</option>
+        <option value="sr">Senior (9&ndash;12 &ndash; Sr)</option>
+      </select>
+    </label>
+    <label>Player One &ndash; sentence pattern
+      <select id="pattern"></select>
+    </label>
+    <div class="label">Player Two &ndash; TYPE demand</div>
+    <div id="types" class="chips"></div>
+    <div id="forms" class="sub"></div>
+    <p id="functionNote" class="note"></p>
+  </section>
+
+  <section>
+    <h2>General demands</h2>
+    <div class="row2">
+      <label>Number of letters
+        <div class="inline">
+          <select id="lenMin"></select><span>to</span><select id="lenMax"></select>
+        </div>
+      </label>
+    </div>
+    <div class="row2">
+      <label>Must contain <input id="mustHave" maxlength="1" size="2" placeholder="e"></label>
+      <label>Must not contain <input id="mustNot" maxlength="1" size="2" placeholder="z"></label>
+    </div>
+    <div class="row2">
+      <label>Letter transfer: all <input id="ltFrom" maxlength="1" size="2"> become <input id="ltTo" maxlength="1" size="2"></label>
+    </div>
+    <label class="check"><input type="checkbox" id="dblVowel"> Double vowel (ee, oo, aa&hellip;)</label>
+    <label class="check"><input type="checkbox" id="dblCons"> Double consonant (tt, pp&hellip;)</label>
+    <label>Pattern (<code>?</code> = one letter, <code>*</code> = any run)
+      <input id="pattern2" placeholder="e.g. s??t*  or  *ing">
+    </label>
+  </section>
+
+  <section>
+    <h2>Cubes on the mat</h2>
+    <label>Letters (cubes played)
+      <input id="matLetters" placeholder="e.g. e s t   (use * for a wild cube)">
+    </label>
+    <label>Resources (cubes not yet played)
+      <input id="resLetters" placeholder="e.g. a r n o i d  (use * for a wild cube)">
+    </label>
+    <label>Solve as
+      <select id="challenge">
+        <option value="off">Ignore cubes (all words)</option>
+        <option value="now" selected>Challenge Now (Letters + 1 more from Resources)</option>
+        <option value="mat">Letters only (0 more)</option>
+        <option value="imp">Challenge Impossible (any Letters + Resources)</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" id="useAllLetters"> Word must use <em>every</em> cube in Letters</label>
+    <label>Color wild cubes in Letters / Resources
+      <span class="hint">Mark wild cubes with <code>*</code> (a yellow-wild shake: type one <code>*</code> per yellow cube).</span>
+    </label>
+  </section>
+
+  <section>
+    <h2>Dictionary rules</h2>
+    <label class="check"><input type="checkbox" id="exObs" checked> Exclude entries with an &ldquo;obsolete&rdquo; label</label>
+    <label class="check"><input type="checkbox" id="exSlang" checked> Exclude slang / vulgar</label>
+    <label class="check"><input type="checkbox" id="exDial"> Exclude dialectal</label>
+    <label class="check"><input type="checkbox" id="exAbbr" checked> Exclude abbreviations / affixes</label>
+    <label class="check"><input type="checkbox" id="headOnly"> Dictionary headwords only (hide inflected forms)</label>
+    <label>Sort
+      <select id="sort"><option value="az">A&ndash;Z</option><option value="len">Longest first</option><option value="rand">Random</option></select>
+    </label>
+    <button id="reset" type="button">Reset all</button>
+  </section>
+
+</aside>
+
+<section id="results">
+  <div id="summary">Loading word list&hellip;</div>
+  <div id="list"></div>
+  <button id="more" hidden type="button">Show more</button>
+  <details id="ref">
+    <summary>Order of Play reference for this division</summary>
+    <div id="refBody"></div>
+  </details>
+  <p class="note">Parts of speech come from Merriam-Webster&rsquo;s entry list. Word forms (plural, past, &hellip;) and regular/irregular are inferred from the dictionary&rsquo;s inflection data, so a judge&rsquo;s dictionary check is still final. Labels such as &ldquo;obsolete&rdquo; may apply to only one sense of a word.</p>
+</section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

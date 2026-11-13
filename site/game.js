@@ -22,7 +22,7 @@ function makeRound() {
   const type = typeSel === 'random' ? pick(d.types.filter(t => t !== 'interjection' && t !== 'conjunction')) : typeSel;
   const cubes = rollCubes(n);
   const demands = [`Type: <b>${type}</b>`];
-  const P = Object.assign(readParams(), {
+  const P = Object.assign(readParams(), { sim: null,
     lenMin: 4, lenMax: 10, have: '', not: '', from: '', to: '', dv: false, dc: false, re: null,
     mode: 'mat', useAll: false, L: parseCubes(cubes.join('')), R: parseCubes(''), cubes: true,
     pat: '', typeBit: TYPES.find(t => t[0] === type)[1], groups: [],

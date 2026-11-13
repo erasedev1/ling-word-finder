@@ -30,9 +30,14 @@ const GENERAL = {
 
 // ---- word forms offered as filters per Type demand ----
 const FORM = { base: 0, plural: 1, third: 2, past: 3, prp: 4, comp: 5, sup: 6, irr: 7 };
+const COLLECTIVES = new Set(`army assembly audience band bevy board brood bunch bunde cabinet caravan choir class clan clergy clique club cluster colony committee company congress corps council couple court cove covey crew crowd culture dozen faculty family fleet flight flock force gaggle galaxy gang garrison gathering generation government group guild herd hive horde host jury kennel kindle litter lodge mob navy nest number orchestra pack pair panel parliament party patrol pride public pod posse quartet quintet regiment school senate sextet shoal skein society squad staff string swarm team tribe trio troop troupe unit wake union faculty league legion mass band bench audience crew committee audience congregation convoy cast chorus clutch drove exhibit fauna flora gentry herd jury leash orchard peerage police populace press public rabble ream remnant roster rout sect set span squadron stable stud syndicate throng tribunal band brigade bunch cartel cohort commission contingent coven dynasty ensemble federation fellowship fraternity gang hierarchy kit lot majority minority nation nursery offspring plague platoon population procession sorority staff swarm tangle trove union`.split(/\s+/).filter(w => w.length >= 4 && w.length <= 10));
 const isIrr = r => r.form === FORM.irr || (r.pos & 1024) !== 0;
 const GROUPS = {
-  noun: [{ id: 'num', opts: [['singular', 'Singular', r => !r.base], ['plural', 'Plural', r => r.base && r.form === FORM.plural]] }],
+  noun: [
+    { id: 'num', opts: [['singular', 'Singular', r => !r.base], ['plural', 'Plural', r => r.base && r.form === FORM.plural]] },
+    { id: 'coll', opts: [['coll', 'Collective', r => COLLECTIVES.has(r.w) || (r.form === FORM.plural && COLLECTIVES.has(r.base))]] },
+    { id: 'reg', opts: [['reg', 'Regular', r => !isIrr(r)], ['irr', 'Irregular plural', isIrr]] },
+  ],
   verb: [
     { id: 'shape', opts: [['pres', 'Base / present', r => !r.base], ['third', '-s form (3rd sing.)', r => r.form === FORM.third], ['past', 'Past (-ed)', r => r.form === FORM.past], ['prp', 'Present participle (-ing)', r => r.form === FORM.prp, 'participles'], ['irrf', 'Irregular form', r => r.form === FORM.irr]] },
     { id: 'reg', opts: [['reg', 'Regular', r => !isIrr(r)], ['irr', 'Irregular', isIrr]] },
@@ -137,6 +142,33 @@ function buildable(counts, len, L, R, mode, useAll) {
   return remUnco + remOther <= k;
 }
 
+function counts(w) { const c = {}; for (const ch of w) c[ch] = (c[ch] || 0) + 1; return c; }
+function bigrams(w) { const s = new Set(); for (let i = 0; i < w.length - 1; i++) s.add(w.slice(i, i + 2)); return s; }
+function simParams() {
+  const w = $('simWord').value.toLowerCase().replace(/[^a-z]/g, '');
+  if (!w) return null;
+  return { w, c: counts(w), bg: bigrams(w), mode: $('simMode').value };
+}
+// returns a score in (0,1], or 0 if the word does not qualify
+function simScore(S2, w) {
+  if (w === S2.w) return 0;
+  const c = counts(w); let common = 0, extra = 0, missing = 0;
+  for (const ch in c) { const q = S2.c[ch] || 0; common += Math.min(c[ch], q); if (c[ch] > q) extra += c[ch] - q; }
+  for (const ch in S2.c) if ((c[ch] || 0) < S2.c[ch]) missing += S2.c[ch] - (c[ch] || 0);
+  switch (S2.mode) {
+    case 'anagram': if (extra || missing) return 0; break;
+    case 'plus1': if (extra !== 1 || missing) return 0; break;
+    case 'minus1': if (extra || missing !== 1) return 0; break;
+    case 'within': if (extra) return 0; break;
+    case 'contains': if (missing) return 0; break;
+    default: { const dice = 2 * common / (w.length + S2.w.length); if (dice < 0.6) return 0; }
+  }
+  const dice = 2 * common / (w.length + S2.w.length);
+  const b = bigrams(w); let bc = 0; for (const x of b) if (S2.bg.has(x)) bc++;
+  const bd = b.size + S2.bg.size ? 2 * bc / (b.size + S2.bg.size) : 0;
+  return 0.0001 + 0.7 * dice + 0.3 * bd;
+}
+
 function readParams() {
   const get = id => $(id);
   const lenMin = +get('lenMin').value, lenMax = +get('lenMax').value;
@@ -151,16 +183,17 @@ function readParams() {
   const pat = get('pattern').value;
   const typeBit = S.type ? TYPES.find(t => t[0] === S.type)[1] : 0;
   const groups = (GROUPS[S.type] || []).map(g => ({ g, sel: g.opts.filter(o => S.forms[g.id + ':' + o[0]]) })).filter(x => x.sel.length);
-  return { lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups };
+  return { sim: simParams(), lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups };
 }
 function filterRows(P, rows = S.rows) {
-  const { lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups } = P;
+  const { sim, lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups } = P;
   const dblv = /(aa|ee|ii|oo|uu)/, dblc = /([bcdfghjklmnpqrstvwxyz])\1/;
   const out = [];
   for (const r of rows) {
     const w = r.w, n = w.length;
     if (n < lenMin || n > lenMax) continue;
     if (headOnly && r.base) continue;
+    if (sim) { const s = simScore(sim, w); if (!s) continue; r.score = s; }
     if (exAbbr && (r.flags & 32)) continue;
     if (exObs && (r.flags & 1)) continue;
     if (exSlang && (r.flags & 12)) continue;
@@ -194,9 +227,11 @@ function filterRows(P, rows = S.rows) {
 }
 function run() {
   if (!S.rows.length) return;
-  const out = filterRows(readParams());
+  const P = readParams(); const out = filterRows(P);
+  const sim = P.sim;
   const sort = $('sort').value;
-  if (sort === 'len') out.sort((a, b) => b.w.length - a.w.length || (a.w < b.w ? -1 : 1));
+  if (sim && sort === 'az') out.sort((x, y) => y.score - x.score || (x.w < y.w ? -1 : 1));
+  else if (sort === 'len') out.sort((a, b) => b.w.length - a.w.length || (a.w < b.w ? -1 : 1));
   else if (sort === 'rand') for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
   S.matches = out; S.shown = 0; $('list').innerHTML = '';
   $('summary').textContent = `${out.length.toLocaleString()} word${out.length === 1 ? '' : 's'} match` + (out.length > PAGE ? ` (showing ${PAGE})` : '');

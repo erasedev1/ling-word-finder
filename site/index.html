@@ -20,6 +20,24 @@
 <aside id="filters">
 
   <section class="finder-only">
+    <h2>Search similar words</h2>
+    <label>Search for a word
+      <input id="simWord" placeholder="e.g. listen" autocapitalize="off" spellcheck="false">
+    </label>
+    <label>Match by letters
+      <select id="simMode">
+        <option value="similar">Similar makeup (most shared letters first)</option>
+        <option value="anagram">Anagrams (exact same letters)</option>
+        <option value="plus1">Same letters + 1 extra</option>
+        <option value="minus1">Same letters, 1 missing</option>
+        <option value="within">Spelled from these letters only</option>
+        <option value="contains">Contains all these letters</option>
+      </select>
+    </label>
+    <p class="note">Combines with every other filter below; results are ranked by similarity.</p>
+  </section>
+
+  <section class="finder-only">
     <h2>Order of Play</h2>
     <label>Division
       <select id="division">
@@ -91,7 +109,7 @@
     <label class="check"><input type="checkbox" id="exAbbr" checked> Exclude abbreviations / affixes</label>
     <label class="check"><input type="checkbox" id="headOnly"> Dictionary headwords only (hide inflected forms)</label>
     <label>Sort
-      <select id="sort"><option value="az">A&ndash;Z</option><option value="len">Longest first</option><option value="rand">Random</option></select>
+      <select id="sort"><option value="az">A&ndash;Z (best match first when searching)</option><option value="len">Longest first</option><option value="rand">Random</option></select>
     </label>
     <button id="reset" type="button">Reset all</button>
   </section>

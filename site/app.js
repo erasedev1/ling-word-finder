@@ -30,15 +30,20 @@ const GENERAL = {
 
 // ---- word forms offered as filters per Type demand ----
 const FORM = { base: 0, plural: 1, third: 2, past: 3, prp: 4, comp: 5, sup: 6, irr: 7 };
-const COLLECTIVES = new Set((window.COLLECTIVE_WORDS || []).filter(w => w.length >= 4 && w.length <= 10));
-// 'collective' (flags & 64) is set at build time from dictionary definitions; the list above adds known terms of venery
-const COLL_BASE = new Set();
-const isColl = r => !r.base && ((r.flags & 64) !== 0 || COLLECTIVES.has(r.w));
+const isColl = r => r.tags.has('collective');
+const TAG_GROUPS = [
+  ['Grammar', ['collective', 'countable', 'uncountable', 'plural-only', 'not-comparable', 'transitive', 'intransitive', 'ambitransitive', 'abbreviation']],
+  ['Inflected / variant form', ['plural', 'comparative', 'superlative', 'past', 'present', 'participle', 'gerund', 'third-person', 'form-of', 'alt-of']],
+  ['Usage label', ['obsolete', 'archaic', 'dated', 'rare', 'uncommon', 'historical', 'poetic', 'nonstandard', 'misspelling', 'slang', 'informal', 'colloquial', 'vulgar', 'offensive', 'derogatory', 'humorous', 'figuratively', 'dialectal']],
+  ['Region', ['UK', 'US', 'Scotland', 'Australia', 'India', 'Ireland', 'Canada', 'New-Zealand', 'Northern-England']],
+];
+const TAGLABEL = { 'plural-only': 'plural only', 'not-comparable': 'not comparable', 'third-person': '3rd-person', 'form-of': 'form of', 'alt-of': 'alt. spelling', 'New-Zealand': 'NZ', 'Northern-England': 'N. England' };
+const tagLabel = t => TAGLABEL[t] || t;
 const isIrr = r => r.form === FORM.irr || (r.pos & 1024) !== 0;
 const GROUPS = {
   noun: [
     { id: 'num', opts: [['singular', 'Singular', r => !r.base], ['plural', 'Plural', r => r.base && r.form === FORM.plural]] },
-    { id: 'coll', opts: [['coll', 'Collective', r => isColl(r) || (r.form === FORM.plural && COLL_BASE.has(r.base))]] },
+    { id: 'coll', opts: [['coll', 'Collective', isColl]] },
     { id: 'reg', opts: [['reg', 'Regular', r => !isIrr(r)], ['irr', 'Irregular plural', isIrr]] },
   ],
   verb: [
@@ -59,7 +64,7 @@ const GROUPS = {
 };
 
 // ---- state ----
-const S = { type: null, forms: {}, rows: [], shown: 0, matches: [] };
+const S = { type: null, forms: {}, rows: [], shown: 0, matches: [], props: new Set() };
 const POSN = [[1, 'n'], [2, 'pron'], [4, 'v'], [8, 'adj'], [16, 'adv'], [32, 'prep'], [64, 'conj'], [128, 'interj']];
 const FORMN = ['', 'plural', '-s form', 'past', '-ing form', 'comparative', 'superlative', 'irregular form'];
 
@@ -69,6 +74,13 @@ function buildStatic() {
   $('division').addEventListener('change', onDivision);
   onDivision();
   document.querySelectorAll('#filters input, #filters select').forEach(el => el.addEventListener('input', () => { if (el.id !== 'division') schedule(); }));
+  const pb = $('props');
+  for (const [label, tags] of TAG_GROUPS) {
+    const h = document.createElement('div'); h.className = 'label'; h.textContent = label; pb.append(h);
+    const wrap = document.createElement('div'); wrap.className = 'chips';
+    for (const t of tags) wrap.append(chip(tagLabel(t), false, function () { S.props.has(t) ? S.props.delete(t) : S.props.add(t); this.classList.toggle('on', S.props.has(t)); schedule(); }));
+    pb.append(wrap);
+  }
   $('reset').onclick = () => { location.reload(); };
   $('more').onclick = () => { renderMore(); };
 }
@@ -186,16 +198,17 @@ function readParams() {
   const pat = get('pattern').value;
   const typeBit = S.type ? TYPES.find(t => t[0] === S.type)[1] : 0;
   const groups = (GROUPS[S.type] || []).map(g => ({ g, sel: g.opts.filter(o => S.forms[g.id + ':' + o[0]]) })).filter(x => x.sel.length);
-  return { sim: simParams(), lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups };
+  return { props: [...S.props], sim: simParams(), lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups };
 }
 function filterRows(P, rows = S.rows) {
-  const { sim, lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups } = P;
+  const { props, sim, lenMin, lenMax, have, not, from, to, dv, dc, re, mode, useAll, L, R, cubes, exObs, exSlang, exDial, exAbbr, headOnly, pat, typeBit, groups } = P;
   const dblv = /(aa|ee|ii|oo|uu)/, dblc = /([bcdfghjklmnpqrstvwxyz])\1/;
   const out = [];
   for (const r of rows) {
     const w = r.w, n = w.length;
     if (n < lenMin || n > lenMax) continue;
     if (headOnly && r.base) continue;
+    if (props.length && !props.every(t => r.tags.has(t))) continue;
     if (sim) { const s = simScore(sim, w); if (!s) continue; r.score = s; }
     if (exAbbr && (r.flags & 32)) continue;
     if (exObs && (r.flags & 1)) continue;
@@ -252,14 +265,19 @@ function renderMore() {
 function card(r) {
   const a = document.createElement('a'); a.className = 'w'; a.target = '_blank'; a.rel = 'noopener';
   a.href = 'https://unabridged.merriam-webster.com/unabridged/' + encodeURIComponent(r.w);
-  const tags = POSN.filter(([b]) => r.pos & b).map(([, t]) => t === 'v' ? (r.pos & 256 && !(r.pos & 512) ? 'vt' : r.pos & 512 && !(r.pos & 256) ? 'vi' : 'v') : t).join('/');
-  const bits = [];
-  if (tags) bits.push(tags);
-  if (r.base) bits.push(`<span class="f">${FORMN[r.form] || 'form'} of ${r.base}</span>`);
+  const pos = POSN.filter(([b]) => r.pos & b).map(([, t]) => t === 'v' ? (r.pos & 256 && !(r.pos & 512) ? 'vt' : r.pos & 512 && !(r.pos & 256) ? 'vi' : 'v') : t).join('/');
+  const badges = [];
+  if (pos) badges.push(`<span class="tg pos">${pos}</span>`);
+  if (r.base) badges.push(`<span class="tg f">${FORMN[r.form] || 'form'} of ${r.base}</span>`);
   const bad = []; if (r.flags & 1) bad.push('obs'); if (r.flags & 2) bad.push('archaic'); if (r.flags & 4) bad.push('slang'); if (r.flags & 8) bad.push('vulgar'); if (r.flags & 16) bad.push('dial'); if (r.flags & 32) bad.push('abbr');
-  if (isColl(r)) bits.push('<span class="f">collective</span>');
-  if (bad.length) bits.push(`<span class="bad">${bad.join(',')}</span>`);
-  a.innerHTML = `<b>${r.w}</b><small>${bits.join(' &middot; ')}</small>`;
+  if (r.pos & 1024) badges.push('<span class="tg irr">irregular</span>');
+  for (const t of r.tags) {
+    if (r.base && (t === 'plural' || t === 'form-of')) continue;   // already shown as "plural of ..."
+    const grp = t === 'collective' ? 'coll' : TAG_GROUPS[3][1].includes(t) ? 'reg' : TAG_GROUPS[2][1].includes(t) ? 'use' : 'gr';
+    badges.push(`<span class="tg ${grp}">${tagLabel(t)}</span>`);
+  }
+  for (const b of bad) if (!r.tags.has({ obs: 'obsolete', archaic: 'archaic', slang: 'slang', vulgar: 'vulgar', dial: 'dialectal', abbr: 'abbreviation' }[b])) badges.push(`<span class="tg use">${b}</span>`);
+  a.innerHTML = `<b>${r.w}</b><small>${badges.join('')}</small>`;
   return a;
 }
 
@@ -272,8 +290,8 @@ async function load() {
       await new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'data/words.js'; s.onload = ok; s.onerror = no; document.head.append(s); });
       j = window.WORDS;
     }
-    S.rows = j.rows.map(([w, pos, flags, form, base, pn]) => ({ w, pos, flags, form, base: base || '', pn: pn ? pn.split(',') : [] }));
-    for (const r of S.rows) if (isColl(r)) COLL_BASE.add(r.w);
+    const TN = j.tags || [];
+    S.rows = j.rows.map(([w, pos, flags, form, base, pn, t]) => ({ w, pos, flags, form, base: base || '', pn: pn ? pn.split(',') : [], tags: new Set(t ? t.split(',').map(i => TN[+i]) : []) }));
     run();
   } catch (e) {
     $('summary').textContent = 'Could not load site/data/words.json or words.js. Run git pull, or rebuild with node scraper/build.mjs.';

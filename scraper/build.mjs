@@ -4,7 +4,29 @@ const POS = ['noun', 'pronoun', 'verb', 'adjective', 'adverb', 'preposition', 'c
 // bits in `pos`; bit 8-9 = verb transitivity (8 transitive, 9 intransitive)
 const FORM = { base: 0, plural: 1, third: 2, past: 3, prp: 4, comp: 5, sup: 6, irr: 7 };
 const FLAG = { obsolete: 1, archaic: 2, slang: 4, vulgar: 8, dialect: 16, abbr: 32, collective: 64 };
-const COLL = new Set(fs.existsSync('data/collective.tsv') ? fs.readFileSync('data/collective.tsv', 'utf8').split('\n').filter(Boolean).map(l => l.split('\t')[0]) : []);
+// ---- Wiktionary (kaikki.org extract, data/wikt.jsonl) is the second dictionary used to tag every word ----
+const TAGS = ['collective', 'countable', 'uncountable', 'plural-only', 'not-comparable', 'transitive', 'intransitive', 'ambitransitive',
+  'plural', 'comparative', 'superlative', 'past', 'present', 'participle', 'gerund', 'third-person', 'form-of', 'alt-of', 'abbreviation',
+  'obsolete', 'archaic', 'dated', 'rare', 'uncommon', 'historical', 'poetic', 'nonstandard', 'misspelling', 'slang', 'informal', 'colloquial',
+  'vulgar', 'offensive', 'derogatory', 'humorous', 'figuratively', 'dialectal', 'UK', 'US', 'Scotland', 'Australia', 'India', 'Ireland', 'Canada', 'New-Zealand', 'Northern-England'];
+const TAGIDX = Object.fromEntries(TAGS.map((t, i) => [t, i]));
+const GROUPGLOSS = /^(?:an? |the )?(?:[a-z-]+ ){0,3}?(?:group|collection|assembly|assemblage|gathering|council|committee|body|company|flock|herd|swarm|crowd|congregation|society|association|organi[sz]ation|community|band|cluster|school|pack|troop|team|crew|gang|corps|clan|tribe|brood|litter|set|array|number)\b/i;
+const PBIT = { noun: 1, pron: 2, verb: 4, adj: 8, adv: 16, prep: 32, conj: 64, intj: 128 };
+const WIKT = new Map();   // word -> { tags:Set, collective:boolean, groupGloss:boolean }
+if (fs.existsSync('data/wikt.jsonl')) for (const l of fs.readFileSync('data/wikt.jsonl', 'utf8').split('\n').filter(Boolean)) {
+  const d = JSON.parse(l); let o = WIKT.get(d.w); if (!o) WIKT.set(d.w, o = { byPos: new Map(), collective: false, groupGloss: false });
+  const pb = PBIT[d.pos] || 0; let ts = o.byPos.get(pb); if (!ts) o.byPos.set(pb, ts = new Set());
+  for (const t of d.tags) if (t in TAGIDX && t !== 'collective') ts.add(t);
+  if (d.pos === 'noun') {
+    if (d.tags.includes('collective') || d.cats.includes('Collectives')) o.collective = true;
+    if ((d.g || []).some(g => GROUPGLOSS.test(g))) o.groupGloss = true;
+  }
+}
+// our earlier candidates (Merriam-Webster definition heuristic + terms of venery) only survive if Wiktionary supports them
+const CAND = new Set([...(fs.existsSync('data/collective.tsv') ? fs.readFileSync('data/collective.tsv', 'utf8').split('\n').filter(Boolean).map(l => l.split('\t')[0]) : []),
+  ...(fs.existsSync('scraper/venery.js') ? (fs.readFileSync('scraper/venery.js', 'utf8').split('`')[1] || '').split(/\s+/).filter(Boolean) : [])]);
+const COLL = new Set([...WIKT].filter(([w, o]) => o.collective || (CAND.has(w) && o.groupGloss)).map(([w]) => w));
+let collDropped = [...CAND].filter(w => !COLL.has(w)).length;
 const PRONOUNS = {
   personal: 'myself yourself himself herself itself ourselves yourselves themselves them they their theirs your yours hers ours mine thee thou thine ye'.split(' '),
   indefinite: 'anyone anybody anything everyone everybody everything someone somebody something nobody nothing another other others some many both each either neither none several most more such same all one ones'.split(' '),
@@ -94,12 +116,17 @@ for (const line of lines) {
     const forms = (f.if || []).map(x => x.replace(/[^a-z]/g, '')).filter(Boolean);
     if (forms.length && forms.some(x => x.length >= 3 && !regular(e.w, x) && x !== e.w)) irrBase = 1;
   }
-  if (exact.length && COLL.has(e.w)) flags |= FLAG.collective;
   if (abbr && !pos) flags |= FLAG.abbr;
-  rows.push([e.w, pos | (irrBase << 10), flags, form, base || 0, pn[e.w] ? pn[e.w].join(',') : 0]);
+  const wk = WIKT.get(e.w); const tagset = new Set();
+  if (wk) for (const [pb, ts] of wk.byPos) if (!(pos & 255) || (pb & pos)) for (const t of ts) tagset.add(t);
+  if (!base) for (const t of ['plural', 'comparative', 'superlative', 'past', 'present', 'participle', 'gerund', 'third-person', 'form-of']) tagset.delete(t);   // inflection tags only describe inflected rows
+  if (COLL.has(e.w) && (pos & 1)) tagset.add('collective');
+  if (base && form === FORM.plural && COLL.has(base)) tagset.add('collective');   // plural of a collective noun
+  if (base && form === FORM.plural) tagset.add('plural'); if (form === FORM.comp) tagset.add('comparative'); if (form === FORM.sup) tagset.add('superlative');
+  rows.push([e.w, pos | (irrBase << 10), flags, form, base || 0, pn[e.w] ? pn[e.w].join(',') : 0, [...tagset].map(t => TAGIDX[t]).sort((x, y) => x - y).join(',')]);
 }
 rows.sort((a, b) => (a[0] < b[0] ? -1 : 1));
 fs.mkdirSync('site/data', { recursive: true });
-fs.writeFileSync('site/data/words.json', JSON.stringify({ fields: ['w', 'pos', 'flags', 'form', 'base', 'pronoun'], built: new Date().toISOString(), rows }));
+fs.writeFileSync('site/data/words.json', JSON.stringify({ fields: ['w', 'pos', 'flags', 'form', 'base', 'pronoun', 'tags'], tags: TAGS, built: new Date().toISOString(), rows }));
 fs.writeFileSync('site/data/words.js', 'window.WORDS=' + fs.readFileSync('site/data/words.json', 'utf8') + ';');
-console.log('rows', rows.length, 'not found', skipped);
+console.log('rows', rows.length, 'not found', skipped, '| wikt-covered', rows.filter(r => WIKT.has(r[0])).length, '| collective', rows.filter(r => r[6].split(',').includes('0')).length, '| earlier candidates dropped', collDropped);

@@ -22,7 +22,7 @@ function makeRound() {
   const type = typeSel === 'random' ? pick(d.types.filter(t => t !== 'interjection' && t !== 'conjunction')) : typeSel;
   const cubes = rollCubes(n);
   const demands = [`Type: <b>${type}</b>`];
-  const P = Object.assign(readParams(), { sim: null,
+  const P = Object.assign(readParams(), { sim: null, props: [],
     lenMin: 4, lenMax: 10, have: '', not: '', from: '', to: '', dv: false, dc: false, re: null,
     mode: 'mat', useAll: false, L: parseCubes(cubes.join('')), R: parseCubes(''), cubes: true,
     pat: '', typeBit: TYPES.find(t => t[0] === type)[1], groups: [],
@@ -124,7 +124,7 @@ function submitWord(e) {
   }
   const row = G.map.get(w);
   if (!row) return say(`"${w}" isn't in the word list.`, 'bad');
-  const spellable = filterRows(Object.assign({}, G.round.P, { lenMin: 1, lenMax: 99, typeBit: 0, groups: [], have: '', not: '', dv: false, dc: false, exObs: false, exSlang: false, exDial: false, exAbbr: false, headOnly: false }), [row]).length;
+  const spellable = filterRows(Object.assign({}, G.round.P, { props: [], lenMin: 1, lenMax: 99, typeBit: 0, groups: [], have: '', not: '', dv: false, dc: false, exObs: false, exSlang: false, exDial: false, exAbbr: false, headOnly: false }), [row]).length;
   say(spellable ? `"${w}" is a word, but doesn't meet the demands.` : `"${w}" can't be made from these cubes.`, 'bad');
 }
 

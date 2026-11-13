@@ -30,7 +30,7 @@ const GENERAL = {
 
 // ---- word forms offered as filters per Type demand ----
 const FORM = { base: 0, plural: 1, third: 2, past: 3, prp: 4, comp: 5, sup: 6, irr: 7 };
-const COLLECTIVES = new Set(`army assembly audience band bevy board brood bunch bunde cabinet caravan choir class clan clergy clique club cluster colony committee company congress corps council couple court cove covey crew crowd culture dozen faculty family fleet flight flock force gaggle galaxy gang garrison gathering generation government group guild herd hive horde host jury kennel kindle litter lodge mob navy nest number orchestra pack pair panel parliament party patrol pride public pod posse quartet quintet regiment school senate sextet shoal skein society squad staff string swarm team tribe trio troop troupe unit wake union faculty league legion mass band bench audience crew committee audience congregation convoy cast chorus clutch drove exhibit fauna flora gentry herd jury leash orchard peerage police populace press public rabble ream remnant roster rout sect set span squadron stable stud syndicate throng tribunal band brigade bunch cartel cohort commission contingent coven dynasty ensemble federation fellowship fraternity gang hierarchy kit lot majority minority nation nursery offspring plague platoon population procession sorority staff swarm tangle trove union`.split(/\s+/).filter(w => w.length >= 4 && w.length <= 10));
+const COLLECTIVES = new Set((window.COLLECTIVE_WORDS || []).filter(w => w.length >= 4 && w.length <= 10));
 const isIrr = r => r.form === FORM.irr || (r.pos & 1024) !== 0;
 const GROUPS = {
   noun: [

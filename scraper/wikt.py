@@ -8,9 +8,6 @@ skip = re.compile(r'^(Terms with|Pages |Entries with|English terms (with|derived
 out = open('data/wikt.jsonl', 'w')
 n = 0
 for line in sys.stdin:
-    # cheap pre-filter on the word before parsing
-    m = re.match(r'\{"[^"]*":[^{]*?"word": "([^"]*)"', line[:300]) or re.search(r'"word": "([^"]*)"', line[:2000]) or re.search(r'"word":"([^"]*)"', line[:2000])
-    if m and not ok.match(m.group(1)): continue
     try: d = json.loads(line)
     except Exception: continue
     w = d.get('word', '')

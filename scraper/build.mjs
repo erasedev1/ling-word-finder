@@ -14,18 +14,21 @@ const GROUPGLOSS = /^(?:an? |the )?(?:[a-z-]+ ){0,3}?(?:group|collection|assembl
 const PBIT = { noun: 1, pron: 2, verb: 4, adj: 8, adv: 16, prep: 32, conj: 64, intj: 128 };
 const WIKT = new Map();   // word -> { tags:Set, collective:boolean, groupGloss:boolean }
 if (fs.existsSync('data/wikt.jsonl')) for (const l of fs.readFileSync('data/wikt.jsonl', 'utf8').split('\n').filter(Boolean)) {
-  const d = JSON.parse(l); let o = WIKT.get(d.w); if (!o) WIKT.set(d.w, o = { byPos: new Map(), collective: false, groupGloss: false });
+  const d = JSON.parse(l); let o = WIKT.get(d.w); if (!o) WIKT.set(d.w, o = { byPos: new Map(), collective: false, groupGloss: false, noun: false });
   const pb = PBIT[d.pos] || 0; let ts = o.byPos.get(pb); if (!ts) o.byPos.set(pb, ts = new Set());
   for (const t of d.tags) if (t in TAGIDX && t !== 'collective') ts.add(t);
   if (d.pos === 'noun') {
+    o.noun = true;
     if (d.tags.includes('collective') || d.cats.includes('Collectives')) o.collective = true;
     if ((d.g || []).some(g => GROUPGLOSS.test(g))) o.groupGloss = true;
   }
 }
 // our earlier candidates (Merriam-Webster definition heuristic + terms of venery) only survive if Wiktionary supports them
-const CAND = new Set([...(fs.existsSync('data/collective.tsv') ? fs.readFileSync('data/collective.tsv', 'utf8').split('\n').filter(Boolean).map(l => l.split('\t')[0]) : []),
-  ...(fs.existsSync('scraper/venery.js') ? (fs.readFileSync('scraper/venery.js', 'utf8').split('`')[1] || '').split(/\s+/).filter(Boolean) : [])]);
-const COLL = new Set([...WIKT].filter(([w, o]) => o.collective || (CAND.has(w) && o.groupGloss)).map(([w]) => w));
+const MWCAND = new Set(fs.existsSync('data/collective.tsv') ? fs.readFileSync('data/collective.tsv', 'utf8').split('\n').filter(Boolean).map(l => l.split('\t')[0]) : []);
+// terms of venery come from Wiktionary's own "English collective nouns" appendix / Wikipedia's animal-names list: keep them if Wiktionary has the noun
+const VENERY = new Set(fs.existsSync('scraper/venery.js') ? (fs.readFileSync('scraper/venery.js', 'utf8').split('`')[1] || '').split(/\s+/).filter(Boolean) : []);
+const COLL = new Set([...WIKT].filter(([w, o]) => o.collective || (MWCAND.has(w) && o.groupGloss) || (VENERY.has(w) && o.noun)).map(([w]) => w));
+const CAND = new Set([...MWCAND, ...VENERY]);
 let collDropped = [...CAND].filter(w => !COLL.has(w)).length;
 const PRONOUNS = {
   personal: 'myself yourself himself herself itself ourselves yourselves themselves them they their theirs your yours hers ours mine thee thou thine ye'.split(' '),

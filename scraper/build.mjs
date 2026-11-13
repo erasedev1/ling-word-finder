@@ -3,7 +3,8 @@ import fs from 'node:fs';
 const POS = ['noun', 'pronoun', 'verb', 'adjective', 'adverb', 'preposition', 'conjunction', 'interjection'];
 // bits in `pos`; bit 8-9 = verb transitivity (8 transitive, 9 intransitive)
 const FORM = { base: 0, plural: 1, third: 2, past: 3, prp: 4, comp: 5, sup: 6, irr: 7 };
-const FLAG = { obsolete: 1, archaic: 2, slang: 4, vulgar: 8, dialect: 16, abbr: 32 };
+const FLAG = { obsolete: 1, archaic: 2, slang: 4, vulgar: 8, dialect: 16, abbr: 32, collective: 64 };
+const COLL = new Set(fs.existsSync('data/collective.tsv') ? fs.readFileSync('data/collective.tsv', 'utf8').split('\n').filter(Boolean).map(l => l.split('\t')[0]) : []);
 const PRONOUNS = {
   personal: 'myself yourself himself herself itself ourselves yourselves themselves them they their theirs your yours hers ours mine thee thou thine ye'.split(' '),
   indefinite: 'anyone anybody anything everyone everybody everything someone somebody something nobody nothing another other others some many both each either neither none several most more such same all one ones'.split(' '),
@@ -93,6 +94,7 @@ for (const line of lines) {
     const forms = (f.if || []).map(x => x.replace(/[^a-z]/g, '')).filter(Boolean);
     if (forms.length && forms.some(x => x.length >= 3 && !regular(e.w, x) && x !== e.w)) irrBase = 1;
   }
+  if (exact.length && COLL.has(e.w)) flags |= FLAG.collective;
   if (abbr && !pos) flags |= FLAG.abbr;
   rows.push([e.w, pos | (irrBase << 10), flags, form, base || 0, pn[e.w] ? pn[e.w].join(',') : 0]);
 }

@@ -31,11 +31,14 @@ const GENERAL = {
 // ---- word forms offered as filters per Type demand ----
 const FORM = { base: 0, plural: 1, third: 2, past: 3, prp: 4, comp: 5, sup: 6, irr: 7 };
 const COLLECTIVES = new Set((window.COLLECTIVE_WORDS || []).filter(w => w.length >= 4 && w.length <= 10));
+// 'collective' (flags & 64) is set at build time from dictionary definitions; the list above adds known terms of venery
+const COLL_BASE = new Set();
+const isColl = r => !r.base && ((r.flags & 64) !== 0 || COLLECTIVES.has(r.w));
 const isIrr = r => r.form === FORM.irr || (r.pos & 1024) !== 0;
 const GROUPS = {
   noun: [
     { id: 'num', opts: [['singular', 'Singular', r => !r.base], ['plural', 'Plural', r => r.base && r.form === FORM.plural]] },
-    { id: 'coll', opts: [['coll', 'Collective', r => COLLECTIVES.has(r.w) || (r.form === FORM.plural && COLLECTIVES.has(r.base))]] },
+    { id: 'coll', opts: [['coll', 'Collective', r => isColl(r) || (r.form === FORM.plural && COLL_BASE.has(r.base))]] },
     { id: 'reg', opts: [['reg', 'Regular', r => !isIrr(r)], ['irr', 'Irregular plural', isIrr]] },
   ],
   verb: [
@@ -254,6 +257,7 @@ function card(r) {
   if (tags) bits.push(tags);
   if (r.base) bits.push(`<span class="f">${FORMN[r.form] || 'form'} of ${r.base}</span>`);
   const bad = []; if (r.flags & 1) bad.push('obs'); if (r.flags & 2) bad.push('archaic'); if (r.flags & 4) bad.push('slang'); if (r.flags & 8) bad.push('vulgar'); if (r.flags & 16) bad.push('dial'); if (r.flags & 32) bad.push('abbr');
+  if (isColl(r)) bits.push('<span class="f">collective</span>');
   if (bad.length) bits.push(`<span class="bad">${bad.join(',')}</span>`);
   a.innerHTML = `<b>${r.w}</b><small>${bits.join(' &middot; ')}</small>`;
   return a;
@@ -269,6 +273,7 @@ async function load() {
       j = window.WORDS;
     }
     S.rows = j.rows.map(([w, pos, flags, form, base, pn]) => ({ w, pos, flags, form, base: base || '', pn: pn ? pn.split(',') : [] }));
+    for (const r of S.rows) if (isColl(r)) COLL_BASE.add(r.w);
     run();
   } catch (e) {
     $('summary').textContent = 'Could not load site/data/words.json or words.js. Run git pull, or rebuild with node scraper/build.mjs.';

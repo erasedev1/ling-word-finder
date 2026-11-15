@@ -166,7 +166,7 @@ function simParams() {
 }
 // returns a score in (0,1], or 0 if the word does not qualify
 function simScore(S2, w) {
-  if (w === S2.w) return 0;
+  if (w === S2.w) return 1.0001;   // the searched word itself ranks first
   const c = counts(w); let common = 0, extra = 0, missing = 0;
   for (const ch in c) { const q = S2.c[ch] || 0; common += Math.min(c[ch], q); if (c[ch] > q) extra += c[ch] - q; }
   for (const ch in S2.c) if ((c[ch] || 0) < S2.c[ch]) missing += S2.c[ch] - (c[ch] || 0);

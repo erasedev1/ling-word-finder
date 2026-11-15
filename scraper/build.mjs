@@ -69,7 +69,7 @@ const regular = (stem, f) => {
 
 const rows = [];
 const lines = fs.readFileSync('data/entries.jsonl', 'utf8').split('\n').filter(Boolean);
-let skipped = 0;
+let skipped = 0, abbrDropped = 0;
 for (const line of lines) {
   const e = JSON.parse(line);
   if (!e.found) { skipped++; continue; }
@@ -118,7 +118,7 @@ for (const line of lines) {
     const forms = (f.if || []).map(x => x.replace(/[^a-z]/g, '')).filter(Boolean);
     if (forms.length && forms.some(x => x.length >= 3 && !regular(e.w, x) && x !== e.w)) irrBase = 1;
   }
-  if (abbr && !pos) flags |= FLAG.abbr;
+  if (abbr && !pos) { abbrDropped++; continue; }   // LT 22E: an abbreviated version of a word is illegal (also affixes/symbols)
   const wk = WIKT.get(e.w); const tagset = new Set();
   if (wk) for (const [pb, ts] of wk.byPos) if (!(pos & 255) || (pb & pos)) for (const t of ts) tagset.add(t);
   if (!base) for (const t of ['plural', 'comparative', 'superlative', 'past', 'present', 'participle', 'gerund', 'third-person', 'form-of']) tagset.delete(t);   // inflection tags only describe inflected rows
@@ -131,4 +131,4 @@ rows.sort((a, b) => (a[0] < b[0] ? -1 : 1));
 fs.mkdirSync('site/data', { recursive: true });
 fs.writeFileSync('site/data/words.json', JSON.stringify({ fields: ['w', 'pos', 'flags', 'form', 'base', 'pronoun', 'tags'], tags: TAGS, built: new Date().toISOString(), rows }));
 fs.writeFileSync('site/data/words.js', 'window.WORDS=' + fs.readFileSync('site/data/words.json', 'utf8') + ';');
-console.log('rows', rows.length, 'not found', skipped, '| wikt-covered', rows.filter(r => WIKT.has(r[0])).length, '| collective', rows.filter(r => r[6].split(',').includes('0')).length, '| earlier candidates dropped', collDropped);
+console.log('rows', rows.length, 'not found', skipped, '| wikt-covered', rows.filter(r => WIKT.has(r[0])).length, '| collective', rows.filter(r => r[6].split(',').includes('0')).length, '| earlier candidates dropped', collDropped, '| abbreviations/affixes dropped', abbrDropped);

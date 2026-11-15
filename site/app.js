@@ -34,10 +34,9 @@ const isColl = r => r.tags.has('collective');
 const TAG_GROUPS = [
   ['Grammar', ['collective', 'countable', 'uncountable', 'plural-only', 'not-comparable', 'transitive', 'intransitive', 'ambitransitive', 'abbreviation']],
   ['Inflected / variant form', ['plural', 'comparative', 'superlative', 'past', 'present', 'participle', 'gerund', 'third-person', 'form-of', 'alt-of']],
-  ['Usage label', ['obsolete', 'archaic', 'dated', 'rare', 'uncommon', 'historical', 'poetic', 'nonstandard', 'misspelling', 'slang', 'informal', 'colloquial', 'vulgar', 'offensive', 'derogatory', 'humorous', 'figuratively', 'dialectal']],
-  ['Region', ['UK', 'US', 'Scotland', 'Australia', 'India', 'Ireland', 'Canada', 'New-Zealand', 'Northern-England']],
+  ['Usage label', ['obsolete', 'archaic', 'slang', 'vulgar', 'nonstandard', 'misspelling', 'dialectal']],
 ];
-const TAGLABEL = { 'plural-only': 'plural only', 'not-comparable': 'not comparable', 'third-person': '3rd-person', 'form-of': 'form of', 'alt-of': 'alt. spelling', 'New-Zealand': 'NZ', 'Northern-England': 'N. England' };
+const TAGLABEL = { 'plural-only': 'plural only', 'not-comparable': 'not comparable', 'third-person': '3rd-person', 'form-of': 'form of', 'alt-of': 'alt. spelling' };
 const tagLabel = t => TAGLABEL[t] || t;
 const isIrr = r => r.form === FORM.irr || (r.pos & 1024) !== 0;
 const GROUPS = {

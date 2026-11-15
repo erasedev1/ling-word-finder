@@ -7,8 +7,7 @@ const FLAG = { obsolete: 1, archaic: 2, slang: 4, vulgar: 8, dialect: 16, abbr: 
 // ---- Wiktionary (kaikki.org extract, data/wikt.jsonl) is the second dictionary used to tag every word ----
 const TAGS = ['collective', 'countable', 'uncountable', 'plural-only', 'not-comparable', 'transitive', 'intransitive', 'ambitransitive',
   'plural', 'comparative', 'superlative', 'past', 'present', 'participle', 'gerund', 'third-person', 'form-of', 'alt-of', 'abbreviation',
-  'obsolete', 'archaic', 'dated', 'rare', 'uncommon', 'historical', 'poetic', 'nonstandard', 'misspelling', 'slang', 'informal', 'colloquial',
-  'vulgar', 'offensive', 'derogatory', 'humorous', 'figuratively', 'dialectal', 'UK', 'US', 'Scotland', 'Australia', 'India', 'Ireland', 'Canada', 'New-Zealand', 'Northern-England'];
+  'obsolete', 'archaic', 'slang', 'vulgar', 'nonstandard', 'misspelling', 'dialectal'];
 const TAGIDX = Object.fromEntries(TAGS.map((t, i) => [t, i]));
 const GROUPGLOSS = /^(?:an? |the )?(?:[a-z-]+ ){0,3}?(?:group|collection|assembly|assemblage|gathering|council|committee|body|company|flock|herd|swarm|crowd|congregation|society|association|organi[sz]ation|community|band|cluster|school|pack|troop|team|crew|gang|corps|clan|tribe|brood|litter|set|array|number)\b/i;
 const PBIT = { noun: 1, pron: 2, verb: 4, adj: 8, adv: 16, prep: 32, conj: 64, intj: 128 };

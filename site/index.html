@@ -12,7 +12,7 @@
   <p>Find legal 4&ndash;10 letter words that satisfy a shake&rsquo;s demands. Word list scraped from Webster&rsquo;s Third International Unabridged (the official AGLOA dictionary).</p>
   <nav id="modes">
     <button type="button" class="mode on" data-mode="find">Word Finder</button>
-    <button type="button" class="mode" data-mode="play">&#127922; Play mode</button>
+    <button type="button" class="mode" data-mode="play">Play mode</button>
   </nav>
 </header>
 
@@ -137,13 +137,13 @@
       </div>
       <label class="check"><input type="checkbox" id="gExtra" checked> Sometimes add an extra demand (letters, must contain&hellip;)</label>
       <label class="check"><input type="checkbox" id="gForm" checked> Sometimes add a word-form demand (plural, past&hellip;)</label>
-      <button id="gRoll" type="button" class="primary">&#127922; Roll the cubes</button>
+      <button id="gRoll" type="button" class="primary">Roll the cubes</button>
     </div>
     <div id="gPlay" hidden>
       <div id="gTop"><div id="timer">2:00</div><div id="gCount"></div></div>
       <div id="dice"></div>
       <div id="demands"></div>
-      <form id="gEntry" autocomplete="off"><input id="gInput" placeholder="Type a word and press Enter" autocapitalize="off" autocorrect="off" spellcheck="false"><button type="submit" class="primary">Add</button></form>
+      <form id="gEntry" autocomplete="off"><input id="gInput" placeholder="Type a word, then press Enter" autocapitalize="off" autocorrect="off" spellcheck="false"><button type="submit" class="primary">Add</button></form>
       <div id="gMsg" aria-live="polite"></div>
       <div id="gFound"></div>
       <button id="gEnd" type="button">End round</button>
@@ -154,7 +154,7 @@
       <h3>You found</h3><div id="gHit" class="wl"></div>
       <h3>You missed <span id="gMissN"></span></h3><div id="gMiss" class="wl"></div>
       <button id="gMore" type="button" hidden>Show more</button>
-      <button id="gAgain" type="button" class="primary">&#127922; Roll again</button>
+      <button id="gAgain" type="button" class="primary">Roll again</button>
     </div>
   </div>
   <div id="finder">

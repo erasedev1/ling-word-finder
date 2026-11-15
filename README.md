@@ -19,7 +19,8 @@ The dictionary is licensed content behind the AGLOA login, so the scraped word d
 export COOKIE_FILE=/path/to/cookie.txt         # "name=value; name2=value2" for unabridged.merriam-webster.com
 node scraper/browse.mjs     # index -> data/candidates.txt   (~1 min)
 node scraper/entries.mjs    # lookups -> data/entries.jsonl  (~10 min, resumable)
-node scraper/build.mjs      # -> site/data/words.json
+node scraper/labels.mjs     # usage labels + capitalized headwords -> data/labels.jsonl (~10 min)
+node scraper/build.mjs      # -> site/data/words.json (drops words illegal under LT 22)
 ```
 
 ## Run
@@ -36,6 +37,9 @@ valid word you missed. It reuses the Word Finder's filtering and respects the *D
 checkboxes.
 
 ## Caveats
+- Words illegal under rule LT 22 are removed at build time: abbreviations/affixes, words whose every sense is labeled
+  obsolete or slang/vulgar, and capitalized (proper-noun) headwords. Archaic words are legal and kept. A word with some
+  current senses is kept, and inflected forms are not label-checked.
 - Parts of speech/transitivity come from Merriam-Webster's entry list; plural/past/-ing/comparative
   forms and regular/irregular are inferred from the entry's inflection list. A judge's check
   against the dictionary is still final.

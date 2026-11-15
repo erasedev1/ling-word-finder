@@ -67,12 +67,24 @@ const regular = (stem, f) => {
   return forms.has(f);
 };
 
+// ---- LT 22 illegal words, judged on Merriam-Webster's own labels (data/labels.jsonl, from scraper/labels.mjs) ----
+// obsolete (archaic is allowed), slang/vulgar -> only when EVERY sense carries the label; proper nouns -> headword is capitalized and is the word itself
+const LABELS = new Map(fs.existsSync('data/labels.jsonl') ? fs.readFileSync('data/labels.jsonl', 'utf8').split('\n').filter(Boolean).map(l => { const d = JSON.parse(l); return [d.w, d]; }) : []);
+const illegal = w => {
+  const d = LABELS.get(w); if (!d || d.missing) return null;
+  if (d.n && d.obs === d.n) return 'obsolete';
+  if (d.n && (d.slang === d.n || d.vulg === d.n)) return 'slang/vulgar';
+  if (d.cap && d.hw.replace(/[^A-Za-z]/g, '').toLowerCase() === w && !/adjective/.test(d.fl)) return 'proper noun';
+  return null;
+};
+const illegalCount = {};
 const rows = [];
 const lines = fs.readFileSync('data/entries.jsonl', 'utf8').split('\n').filter(Boolean);
 let skipped = 0, abbrDropped = 0;
 for (const line of lines) {
   const e = JSON.parse(line);
   if (!e.found) { skipped++; continue; }
+  { const why = illegal(e.w); if (why) { illegalCount[why] = (illegalCount[why] || 0) + 1; continue; } }
   const f = e.first || {};
   let pos = 0, abbr = false, form = 0, base = '';
   const exact = e.exact || [];
@@ -131,4 +143,4 @@ rows.sort((a, b) => (a[0] < b[0] ? -1 : 1));
 fs.mkdirSync('site/data', { recursive: true });
 fs.writeFileSync('site/data/words.json', JSON.stringify({ fields: ['w', 'pos', 'flags', 'form', 'base', 'pronoun', 'tags'], tags: TAGS, built: new Date().toISOString(), rows }));
 fs.writeFileSync('site/data/words.js', 'window.WORDS=' + fs.readFileSync('site/data/words.json', 'utf8') + ';');
-console.log('rows', rows.length, 'not found', skipped, '| wikt-covered', rows.filter(r => WIKT.has(r[0])).length, '| collective', rows.filter(r => r[6].split(',').includes('0')).length, '| earlier candidates dropped', collDropped, '| abbreviations/affixes dropped', abbrDropped);
+console.log('rows', rows.length, 'not found', skipped, '| wikt-covered', rows.filter(r => WIKT.has(r[0])).length, '| collective', rows.filter(r => r[6].split(',').includes('0')).length, '| earlier candidates dropped', collDropped, '| abbreviations/affixes dropped', abbrDropped, '| illegal dropped', JSON.stringify(illegalCount));

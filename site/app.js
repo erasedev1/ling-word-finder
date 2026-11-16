@@ -272,7 +272,7 @@ function card(r) {
   if (r.pos & 1024) badges.push('<span class="tg irr">irregular</span>');
   for (const t of r.tags) {
     if (r.base && (t === 'plural' || t === 'form-of')) continue;   // already shown as "plural of ..."
-    const grp = t === 'collective' ? 'coll' : TAG_GROUPS[3][1].includes(t) ? 'reg' : TAG_GROUPS[2][1].includes(t) ? 'use' : 'gr';
+    const grp = t === 'collective' ? 'coll' : TAG_GROUPS[2][1].includes(t) ? 'use' : 'gr';
     badges.push(`<span class="tg ${grp}">${tagLabel(t)}</span>`);
   }
   for (const b of bad) if (!r.tags.has({ obs: 'obsolete', archaic: 'archaic', slang: 'slang', vulgar: 'vulgar', dial: 'dialectal', abbr: 'abbreviation' }[b])) badges.push(`<span class="tg use">${b}</span>`);
